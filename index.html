@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="shortcut icon" href="./frames/frame_0001.jpeg" type="image/x-icon">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        ::-webkit-scrollbar {
+            width: 0px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="w-full h-screen">
+        <div class="parent top-0 left-0 w-full h-[1000vh]">
+            <div class="w-full sticky top-0 left-0">
+                <canvas class="w-full h-screen" id="frames"></canvas>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
+    <script>
+
+        var canvas = document.querySelector("canvas");
+        const context = canvas.getContext("2d");
+
+        const frames = {
+            currentIndex: 0,
+            maxIndex: 737,
+        };
+
+        let loadedImages = 0;
+        var images = [];
+
+        const preloadImages = () => {
+            for (var i = 1; i <= frames.maxIndex; i++) {
+                const imgUrl = `./frames/frame_${i.toString().padStart(4, "0")}.jpeg`;
+                const img = new Image();
+                img.src = imgUrl;
+                img.onload = () => {
+                    loadedImages++;
+                    console.log(`Image ${i} loaded.`);
+                    if (loadedImages === frames.maxIndex) {
+                        console.log('All images loaded.');
+                        loadImage(frames.currentIndex);
+                        startAnimation();
+                    }
+                };
+                img.onerror = (e) => {
+                    console.error(`Error loading image ${imgUrl}:`, e);
+                };
+                images.push(img);
+            }
+        };
+
+        const loadImage = (index) => {
+            if (index >= 0 && index <= frames.maxIndex) {
+                let image = images[index];
+                if (!image) {
+                    console.error(`Image at index ${index} is not loaded.`);
+                    return;
+                }
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+
+                const scaleX = canvas.width / image.width;
+                const scaleY = canvas.height / image.height;
+                const scale = Math.max(scaleX, scaleY);
+
+                const newWidth = image.width * scale;
+                const newHeight = image.height * scale;
+
+                const offsetX = (canvas.width - newWidth) / 2;
+                const offsetY = (canvas.height - newHeight) / 2;
+
+                context.clearRect(0, 0, canvas.width, canvas.height);
+                context.imageSmoothingEnabled = true;
+                context.imageSmoothingQuality = "high";
+                context.drawImage(image, offsetX, offsetY, newWidth, newHeight);
+                frames.currentIndex = index;
+            }
+        };
+
+        const startAnimation = () => {
+            var tl = gsap.timeline({
+                scrollTrigger: {
+                    trigger: ".parent",
+                    start: "top top",
+                    end: "bottom bottom", // Adjust end as needed
+                    scrub: 2,
+                    
+                }
+            });
+
+            tl.to(frames, {
+                currentIndex: frames.maxIndex,
+                onUpdate: () => {
+                    loadImage(Math.floor(frames.currentIndex));
+                }
+            });
+        };
+
+        preloadImages();
+
+    </script>
+</body>
+
+</html>
